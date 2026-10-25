@@ -10,7 +10,7 @@ export function usePersonajes(pagina: number = 1) {
   console.log("[DIAGNOSTICO] Hook ejecutado");
 
   return useQuery({
-    queryKey: queryKeys.personajes.lista(pagina),
+    queryKey: ["personajes", "pagina", 1, "limite", 100],
     queryFn: () => obtenerPersonajes(pagina),
     staleTime: 10 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,

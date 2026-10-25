@@ -8,7 +8,7 @@ export async function obtenerPersonajes(
   console.log("[GET INICIO]", new Date().toISOString());
 
   const respuesta = await fetch(
-    `${API_URL}/characters?page=${pagina}&limit=20`,
+    `${API_URL}/characters?page=${pagina}&limit=100`,
   );
 
   if (!respuesta.ok) {

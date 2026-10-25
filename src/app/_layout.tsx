@@ -8,6 +8,7 @@ import AppTabs from "@/components/app-tabs";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { configurarRed } from "../lib/network";
 import { persister, queryClient } from "../lib/queryClient";
+import { guardarRegistro } from "../lib/registro";
 
 SplashScreen.preventAutoHideAsync();
 configurarRed();
@@ -22,9 +23,9 @@ export default function TabLayout() {
         persister,
         maxAge: 1000 * 60 * 60 * 24,
       }}
-      onSuccess={() => {
-        console.log("[CACHE] Restauración completada");
-        return queryClient.resumePausedMutations();
+      onSuccess={async () => {
+        await guardarRegistro("Caché restaurada");
+        await queryClient.resumePausedMutations();
       }}
     >
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
