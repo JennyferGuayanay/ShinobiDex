@@ -1,180 +1,228 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useMutationState } from "@tanstack/react-query";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import {
+  mutationKeys,
+  useCrearFavorito,
+  useEditarFavorito,
+  useFavoritos,
+} from "../hooks/useFavoritos";
+import type { Favorito, NuevoFavorito } from "../types/favorito";
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-  };
-  const theme = useTheme();
-
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+function TarjetaFavorito({ item }: { item: Favorito }) {
+  const [nota, setNota] = useState(item.nota);
+  const editar = useEditarFavorito();
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
+    <View style={styles.tarjeta}>
+      <Text style={styles.nombre}>🥷 {item.nombre}</Text>
+      <Text style={styles.detalle}>ID Ninja: {item.personajeId}</Text>
 
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
+      <TextInput
+        style={styles.entrada}
+        value={nota}
+        onChangeText={setNota}
+        placeholder="Escribe tu nota ninja"
+        placeholderTextColor="#777"
+      />
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+      <Pressable
+        style={styles.boton}
+        onPress={() => editar.mutate({ id: item.id, nota })}
+      >
+        <Text style={styles.textoBoton}>Guardar cambios</Text>
+      </Pressable>
+      {editar.isPaused && (
+        <Text style={styles.pendiente}>⏳ Edición pendiente</Text>
+      )}
+      {editar.isError && (
+        <Text style={styles.error}>{editar.error.message}</Text>
+      )}
+    </View>
+  );
+}
 
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
+export default function Coleccion() {
+  const [personajeId, setPersonajeId] = useState("1344");
+  const [nombre, setNombre] = useState("Naruto Uzumaki");
+  const [nota, setNota] = useState("");
 
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+  const favoritos = useFavoritos();
+  const crear = useCrearFavorito();
 
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+  const pendientesCrear = useMutationState({
+    filters: { mutationKey: mutationKeys.crear, status: "pending" },
+    select: (mutation) => ({
+      variables: mutation.state.variables as NuevoFavorito,
+      pausada: mutation.state.isPaused,
+      id: mutation.mutationId,
+    }),
+  });
 
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+  const pendientesEditar = useMutationState({
+    filters: { mutationKey: mutationKeys.editar, status: "pending" },
+    select: (mutation) => ({
+      id: mutation.mutationId,
+      pausada: mutation.state.isPaused,
+    }),
+  });
+
+  function guardar() {
+    const id = Number(personajeId);
+
+    if (!Number.isInteger(id) || id <= 0 || !nombre.trim()) {
+      return;
+    }
+
+    crear.mutate({
+      personajeId: id,
+      nombre: nombre.trim(),
+      imagen: "",
+      nota: nota.trim(),
+    });
+
+    setNota("");
+  }
+
+  return (
+    <SafeAreaView style={styles.contenedor}>
+      <ScrollView contentContainerStyle={styles.contenido}>
+        <Text style={styles.etiqueta}>🍥 ALDEA SHINOBI</Text>
+        <Text style={styles.titulo}>Mi colección</Text>
+        <Text style={styles.subtitulo}>
+          Guarda tus ninjas favoritos y sus notas.
+        </Text>
+
+        <View style={styles.tarjeta}>
+          <Text style={styles.seccion}>Nuevo expediente</Text>
+
+          <TextInput
+            style={styles.entrada}
+            value={personajeId}
+            onChangeText={setPersonajeId}
+            keyboardType="numeric"
+            placeholder="ID del personaje"
+            placeholderTextColor="#777"
+          />
+
+          <TextInput
+            style={styles.entrada}
+            value={nombre}
+            onChangeText={setNombre}
+            placeholder="Nombre del ninja"
+            placeholderTextColor="#777"
+          />
+
+          <TextInput
+            style={styles.entrada}
+            value={nota}
+            onChangeText={setNota}
+            placeholder="Nota personal"
+            placeholderTextColor="#777"
+          />
+
+          <Pressable style={styles.boton} onPress={guardar}>
+            <Text style={styles.textoBoton}>🍥 Agregar favorito</Text>
+          </Pressable>
+        </View>
+
+        {pendientesCrear.map((item) => (
+          <View key={item.id} style={styles.pendienteTarjeta}>
+            <Text style={styles.nombre}>
+              {item.variables?.nombre ?? "Nuevo favorito"}
+            </Text>
+            <Text style={styles.pendiente}>
+              {item.pausada
+                ? "⏳ Pendiente de sincronización"
+                : "🔄 Enviando a MockAPI"}
+            </Text>
+          </View>
+        ))}
+
+        {pendientesEditar.length > 0 && (
+          <Text style={styles.pendiente}>
+            Ediciones en proceso: {pendientesEditar.length}
+          </Text>
+        )}
+
+        <Text style={styles.seccion}>Mis expedientes guardados</Text>
+
+        {favoritos.isPending && <ActivityIndicator color="#F25C00" />}
+
+        {favoritos.isError && (
+          <Text style={styles.error}>{favoritos.error.message}</Text>
+        )}
+
+        {favoritos.isSuccess && favoritos.data.length === 0 && (
+          <Text style={styles.subtitulo}>
+            Todavía no tienes favoritos guardados.
+          </Text>
+        )}
+
+        {favoritos.data?.map((item) => (
+          <TarjetaFavorito key={item.id} item={item} />
+        ))}
+
+        {crear.isError && (
+          <Text style={styles.error}>{crear.error.message}</Text>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
+  contenedor: { flex: 1, backgroundColor: "#171820" },
+  contenido: { padding: 20, paddingBottom: 60, gap: 12 },
+  etiqueta: { color: "#F9A603", fontSize: 12, fontWeight: "bold" },
+  titulo: { color: "#F7EFE2", fontSize: 30, fontWeight: "900" },
+  subtitulo: { color: "#C0B8AE", fontSize: 13 },
+  seccion: {
+    color: "#F9A603",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 12,
   },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  tarjeta: {
+    backgroundColor: "#282B35",
+    padding: 16,
+    borderRadius: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#F25C00",
+    gap: 10,
   },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
+  entrada: {
+    backgroundColor: "#F7EFE2",
+    color: "#171820",
+    padding: 12,
+    borderRadius: 9,
   },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
+  boton: {
+    backgroundColor: "#F25C00",
+    padding: 13,
+    borderRadius: 10,
+    alignItems: "center",
   },
-  centerText: {
-    textAlign: 'center',
+  textoBoton: { color: "#FFFFFF", fontWeight: "bold" },
+  nombre: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
+  detalle: { color: "#C0B8AE", fontSize: 12 },
+  pendiente: { color: "#F9A603", fontSize: 13 },
+  pendienteTarjeta: {
+    borderWidth: 1,
+    borderColor: "#F9A603",
+    borderRadius: 12,
+    padding: 14,
+    gap: 5,
   },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
-  },
+  error: { color: "#FF7777", fontSize: 13 },
 });
